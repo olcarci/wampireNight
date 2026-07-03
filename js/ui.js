@@ -127,53 +127,77 @@ function setCell(row, col, sym, effect = false) {
 }
 
 function animateReelsToResult(finalGrid) {
-  return new Promise(resolve => {
-    const cols = GAME_CONFIG.cols;
-    const rows = GAME_CONFIG.rows;
-    let stopped = 0;
+    return new Promise(resolve => {
 
-    for (let c = 0; c < cols; c++) {
-      const columnCells = [...document.querySelectorAll(`.symbol[data-col="${c}"]`)];
+        const cols = GAME_CONFIG.cols;
+        const rows = GAME_CONFIG.rows;
 
-      columnCells.forEach(cell => cell.classList.add('spin-blur'));
+        let finished = 0;
 
-      const interval = setInterval(() => {
-        for (let r = 0; r < rows; r++) {
-          setCell(r, c, randomSymbol());
-          const cell = document.querySelector(`.symbol[data-row="${r}"][data-col="${c}"]`);
-          if (cell) cell.classList.add('spin-blur');
+        for (let col = 0; col < cols; col++) {
+
+            const interval = setInterval(() => {
+
+                for (let row = 0; row < rows; row++) {
+
+                    const cell = document.querySelector(
+                        `.symbol[data-row="${row}"][data-col="${col}"]`
+                    );
+
+                    if (!cell) continue;
+
+                    const sym = randomSymbol();
+
+                    cell.className = `symbol ${sym.id} spin-blur`;
+                    cell.innerHTML = `<span>${sym.label}</span>`;
+
+                }
+
+            }, turbo ? 40 : 60);
+
+
+            const stopDelay = (turbo ? 500 : 900) + (col * 250);
+
+            setTimeout(() => {
+
+                clearInterval(interval);
+
+                for (let row = 0; row < rows; row++) {
+
+                    const cell = document.querySelector(
+                        `.symbol[data-row="${row}"][data-col="${col}"]`
+                    );
+
+                    const sym = finalGrid[row][col];
+
+                    cell.className = `symbol ${sym.id} land`;
+
+                    cell.innerHTML = `<span>${sym.label}</span>`;
+
+                    setTimeout(() => {
+
+                        cell.classList.remove("land");
+
+                    },300);
+
+                }
+
+                Sound.stop();
+
+                finished++;
+
+                if(finished===cols){
+
+                    setTimeout(resolve,200);
+
+                }
+
+            },stopDelay);
+
         }
-      }, turbo ? 45 : 70);
 
-      const stopTime = (turbo ? 350 : 700) + c * (turbo ? 120 : 280);
-
-      setTimeout(() => {
-        clearInterval(interval);
-
-        for (let r = 0; r < rows; r++) {
-          setCell(r, c, finalGrid[r][c], true);
-        }
-
-        const newColumnCells = [...document.querySelectorAll(`.symbol[data-col="${c}"]`)];
-        newColumnCells.forEach(cell => {
-          cell.classList.remove('spin-blur');
-          cell.classList.add('reel-stop');
-          setTimeout(() => cell.classList.remove('reel-stop'), 300);
-        });
-
-        Sound.stop();
-        vibrate(25);
-
-        stopped++;
-
-        if (stopped === cols) {
-          setTimeout(resolve, 250);
-        }
-      }, stopTime);
-    }
-  });
+    });
 }
-
 async function spin() {
   if (spinning) return;
 
