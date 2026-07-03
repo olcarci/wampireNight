@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#080010" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Vampire Night" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="format-detection" content="telephone=no" />
+  <link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png" />
+  <title>Vampire Night Bell Link</title>
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <main class="game-shell" id="app">
+    <header class="topbar">
+      <div class="brand"><span class="moon">☾</span><div><small>VAMPIRE NIGHT</small><b>BELL LINK</b></div></div>
+      <div class="top-actions"><button class="icon-btn" id="settingsBtn">⚙</button><button class="icon-btn" id="fullscreenBtn">⛶</button></div>
+    </header>
+    <section class="jackpot-board">
+      <div class="jackpot grand"><small>GRAND</small><strong id="grand">0.00</strong></div>
+      <div class="jackpot major"><small>MAJOR</small><strong id="major">0.00</strong></div>
+      <div class="jackpot minor"><small>MINOR</small><strong id="minor">0.00</strong></div>
+      <div class="jackpot mini"><small>MINI</small><strong id="mini">0.00</strong></div>
+    </section>
+    <section class="machine">
+      <aside class="left-panel">
+        <div class="bell-card"><span>🔔</span><b>BELL</b><small>LINK</small></div>
+        <div class="line-card"><b>5</b><small>LINES<br>FIXED</small></div>
+        <button class="side-btn small" id="historyBtn">GEÇMİŞ</button>
+      </aside>
+      <section class="reel-frame" id="reelFrame">
+        <svg class="payline-layer" id="paylineLayer" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+        <div class="reels" id="reels"></div>
+        <div class="free-banner hidden" id="freeBanner">FREE SPIN</div>
+        <div class="big-win hidden" id="bigWin"><span>BÜYÜK KAZANÇ</span><b id="bigWinAmount">0.00</b></div>
+      </section>
+      <aside class="right-panel">
+        <button class="spin-btn" id="spinBtn"><span>OYNA</span></button>
+        <button class="side-btn" id="turboBtn">HIZ</button>
+        <button class="side-btn" id="autoBtn">OTO</button>
+        <button class="side-btn" id="paytableBtn">ÖDEME</button>
+        <button class="side-btn" id="soundBtn">SES</button>
+      </aside>
+    </section>
+    <section class="bottom-panel">
+      <div class="meter"><small>BAKİYE</small><strong id="balance">0.00</strong><em>TRY</em></div>
+      <div class="bet-area"><small>BAHİS SEÇ</small><div class="bet-buttons" id="betButtons"></div></div>
+      <div class="meter win"><small>KAZANÇ</small><strong id="lastWin">0.00</strong><em>TRY</em></div>
+    </section>
+    <div class="message" id="message">Bahis seç ve OYNA</div>
+  </main>
+  <dialog id="paytable" class="modal"><button class="close" data-close="paytable">×</button><h2>ÖDEME TABLOSU</h2><div id="payList" class="pay-list"></div><hr><p><b>Bell Link:</b> 6+ çan bonus verir. 9+ çanda jackpot şansı açılır.</p><p><b>Free Spin:</b> 3+ yarasa 5 ücretsiz çevirme verir.</p></dialog>
+  <dialog id="settings" class="modal"><button class="close" data-close="settings">×</button><h2>AYARLAR</h2><label class="switch-row">Titreşim <input id="vibrationToggle" type="checkbox" checked></label><label class="switch-row">Büyük kazanç animasyonu <input id="bigWinToggle" type="checkbox" checked></label><button class="wide-btn" id="resetBtn">BAKİYEYİ SIFIRLA</button></dialog>
+  <dialog id="history" class="modal"><button class="close" data-close="history">×</button><h2>SON OYUNLAR</h2><div id="historyList" class="history-list"></div></dialog>
+  <div class="bonus-screen hidden" id="bonusScreen"><div class="bonus-box"><h2>BELL LINK BONUS</h2><p id="bonusText">Çanlar toplanıyor...</p><button id="bonusCollect">TOPLA</button></div></div>
+  <script src="js/config.js"></script><script src="js/sound.js"></script><script src="js/storage.js"></script><script src="js/engine.js"></script><script src="js/ui.js"></script>
+  <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}));}</script>
+</body>
+</html>

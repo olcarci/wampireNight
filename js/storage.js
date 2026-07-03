@@ -1,0 +1,1 @@
+const Store={key:'vampireNightPart4',load(){try{return JSON.parse(localStorage.getItem(this.key)||'{}')}catch(e){return{}}},save(data){try{localStorage.setItem(this.key,JSON.stringify(data))}catch(e){}},clear(){localStorage.removeItem(this.key)}};
