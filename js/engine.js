@@ -1,1 +1,249 @@
-class SlotEngine{constructor(c){this.config=c;const s=Store.load();this.balance=s.balance??c.balance;this.bet=s.bet??c.defaultBet;this.lastWin=0;this.freeSpins=s.freeSpins??0;this.history=s.history??[];this.jackpots=s.jackpots??{grand:94835.73,major:116348.72,minor:5000,mini:1000};this.symbolMap=Object.fromEntries(c.symbols.map(x=>[x.id,x]))}persist(){Store.save({balance:this.balance,bet:this.bet,freeSpins:this.freeSpins,history:this.history.slice(0,20),jackpots:this.jackpots})}pick(){return this.symbolMap[this.config.weights[Math.floor(Math.random()*this.config.weights.length)]]}spin(){const isFree=this.freeSpins>0;if(!isFree){if(this.balance<this.bet)return{error:'Bakiye yetersiz'};this.balance-=this.bet}else this.freeSpins--;const grid=Array.from({length:this.config.rows},()=>Array.from({length:this.config.cols},()=>this.pick()));const r=this.evaluate(grid);this.lastWin=r.win;this.balance+=r.win;this.growJackpots();if(r.freeTrigger)this.freeSpins+=5;this.history.unshift({time:new Date().toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}),bet:this.bet,win:r.win,free:isFree,bonus:!!r.bonus,jackpot:r.jackpot?.key||''});this.history=this.history.slice(0,20);this.persist();return{grid,isFree,...r,balance:this.balance,freeSpins:this.freeSpins,jackpots:this.jackpots}}evaluate(grid){let win=0,winLines=[],bellCount=0,batCount=0;grid.flat().forEach(s=>{if(s.id==='bell')bellCount++;if(s.id==='bat')batCount++});this.config.lines.forEach((line,idx)=>{const chain=line.map((row,col)=>grid[row][col]);const first=chain[0].id;let count=1;for(let i=1;i<chain.length;i++){if(chain[i].id===first)count++;else break}if(count>=3){const mult=this.symbolMap[first].pay[count]||0,amount=this.bet*mult;win+=amount;winLines.push({idx,count,id:first,amount})}});let bonus=null;if(bellCount>=6){const bonusWin=Math.round(this.bet*(8+Math.random()*34));win+=bonusWin;bonus={bellCount,bonusWin}}let jackpot=null;if(bellCount>=9&&Math.random()<.2){const roll=Math.random();const key=roll<.55?'mini':roll<.85?'minor':roll<.97?'major':'grand';const amount=this.jackpots[key];win+=amount;jackpot={key,amount};this.jackpots[key]=key==='mini'?1000:key==='minor'?5000:key==='major'?116348.72:94835.73}return{win,winLines,bellCount,freeTrigger:batCount>=3,bonus,jackpot}}setBet(b){this.bet=b;this.persist()}reset(){Store.clear();this.balance=this.config.balance;this.bet=this.config.defaultBet;this.lastWin=0;this.freeSpins=0;this.history=[];this.jackpots={grand:94835.73,major:116348.72,minor:5000,mini:1000};this.persist()}growJackpots(){this.jackpots.grand+=this.bet*.003;this.jackpots.major+=this.bet*.004;this.jackpots.minor+=this.bet*.002;this.jackpots.mini+=this.bet*.001}}
+class SlotEngine {
+  constructor(config) {
+    this.config = config;
+
+    const saved = Store.load();
+
+    this.balance = saved.balance ?? 1000;
+    this.bet = saved.bet ?? config.defaultBet;
+    this.lastWin = 0;
+    this.freeSpins = saved.freeSpins ?? 0;
+    this.history = saved.history ?? [];
+
+    this.jackpots = saved.jackpots ?? {
+      grand: 94837.83,
+      major: 116351.52,
+      minor: 5001.40,
+      mini: 1000.70
+    };
+  }
+
+  save() {
+    Store.save({
+      balance: this.balance,
+      bet: this.bet,
+      freeSpins: this.freeSpins,
+      history: this.history,
+      jackpots: this.jackpots
+    });
+  }
+
+  reset() {
+    this.balance = 1000;
+    this.bet = this.config.defaultBet;
+    this.lastWin = 0;
+    this.freeSpins = 0;
+    this.history = [];
+    this.jackpots = {
+      grand: 94837.83,
+      major: 116351.52,
+      minor: 5001.40,
+      mini: 1000.70
+    };
+    this.save();
+  }
+
+  setBet(value) {
+    this.bet = value;
+    this.save();
+  }
+
+  random(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+
+  pick() {
+    const total = this.config.symbols.reduce((sum, s) => sum + s.weight, 0);
+    let roll = Math.random() * total;
+
+    for (const sym of this.config.symbols) {
+      roll -= sym.weight;
+      if (roll <= 0) return sym;
+    }
+
+    return this.config.symbols[0];
+  }
+
+  createGrid() {
+    const grid = [];
+
+    for (let r = 0; r < this.config.rows; r++) {
+      grid[r] = [];
+      for (let c = 0; c < this.config.cols; c++) {
+        grid[r][c] = this.pick();
+      }
+    }
+
+    return grid;
+  }
+
+  countBells(grid) {
+    let count = 0;
+
+    for (let r = 0; r < this.config.rows; r++) {
+      for (let c = 0; c < this.config.cols; c++) {
+        if (grid[r][c].id === 'bell') count++;
+      }
+    }
+
+    return count;
+  }
+
+  calculateLineWins(grid) {
+    let totalWin = 0;
+    const winLines = [];
+
+    this.config.lines.forEach((line, idx) => {
+      const symbols = line.map((row, col) => grid[row][col]);
+      const first = symbols[0];
+
+      let count = 1;
+
+      for (let i = 1; i < symbols.length; i++) {
+        if (symbols[i].id === first.id) {
+          count++;
+        } else {
+          break;
+        }
+      }
+
+      if (count >= 3 && first.pay[count]) {
+        const win = first.pay[count] * this.bet;
+        totalWin += win;
+
+        winLines.push({
+          idx,
+          symbol: first.id,
+          count,
+          win
+        });
+      }
+    });
+
+    return { totalWin, winLines };
+  }
+
+  checkFreeSpin(grid) {
+    let batCount = 0;
+
+    for (let r = 0; r < this.config.rows; r++) {
+      for (let c = 0; c < this.config.cols; c++) {
+        if (grid[r][c].id === 'bat') batCount++;
+      }
+    }
+
+    return batCount >= 3;
+  }
+
+  checkBonus(grid) {
+    const bellCount = this.countBells(grid);
+
+    if (bellCount >= 6) {
+      const bonusWin = this.bet * bellCount * this.random(4, 10);
+
+      return {
+        bellCount,
+        bonusWin: Math.round(bonusWin * 100) / 100
+      };
+    }
+
+    return null;
+  }
+
+  checkJackpot(grid) {
+    const bellCount = this.countBells(grid);
+
+    if (bellCount < 8) return null;
+
+    let key = 'mini';
+
+    if (bellCount >= 14) key = 'grand';
+    else if (bellCount >= 11) key = 'major';
+    else if (bellCount >= 9) key = 'minor';
+
+    const amount = this.jackpots[key];
+
+    this.jackpots[key] = Math.round((this.jackpots[key] * 0.75) * 100) / 100;
+
+    return { key, amount };
+  }
+
+  growJackpots() {
+    this.jackpots.grand += this.bet * 0.02;
+    this.jackpots.major += this.bet * 0.015;
+    this.jackpots.minor += this.bet * 0.01;
+    this.jackpots.mini += this.bet * 0.005;
+  }
+
+  addHistory(win, extra = {}) {
+    this.history.unshift({
+      time: new Date().toLocaleTimeString('tr-TR', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      bet: this.bet,
+      win,
+      ...extra
+    });
+
+    this.history = this.history.slice(0, 20);
+  }
+
+  spin() {
+    if (this.freeSpins > 0) {
+      this.freeSpins--;
+    } else {
+      if (this.balance < this.bet) {
+        return { error: 'Yetersiz bakiye' };
+      }
+
+      this.balance -= this.bet;
+    }
+
+    this.growJackpots();
+
+    const grid = this.createGrid();
+
+    const lineResult = this.calculateLineWins(grid);
+    let win = lineResult.totalWin;
+
+    const jackpot = this.checkJackpot(grid);
+
+    if (jackpot) {
+      win += jackpot.amount;
+    }
+
+    const bonus = this.checkBonus(grid);
+
+    if (bonus) {
+      win += bonus.bonusWin;
+    }
+
+    let freeTrigger = false;
+
+    if (this.checkFreeSpin(grid)) {
+      this.freeSpins += 5;
+      freeTrigger = true;
+    }
+
+    this.balance += win;
+    this.lastWin = win;
+
+    this.addHistory(win, {
+      jackpot: jackpot ? jackpot.key : '',
+      bonus: bonus ? true : false
+    });
+
+    this.save();
+
+    return {
+      grid,
+      win,
+      winLines: lineResult.winLines,
+      jackpot,
+      bonus,
+      freeTrigger,
+      freeSpins: this.freeSpins
+    };
+  }
+}
